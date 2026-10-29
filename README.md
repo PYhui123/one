@@ -27,6 +27,7 @@
 ├── 压缩机维修手册.pdf      # 示例数据文件
 └── 风机手册.docx         # 示例数据文件
 ## 如何运行
+请先运行 script1.py 将数据入库，然后才能运行 ASK.py 进行问答
 ## 作者
 
 GitHub：https://github.com/PYhui123
