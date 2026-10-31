@@ -1,5 +1,6 @@
 import streamlit as st
-
+from dashscope import Generation
+import os
 # 假设你的核心逻辑在 ASK.py 里，或者你可以直接把函数复制过来
 # from ASK import get_answer
 
@@ -24,17 +25,52 @@ if prompt := st.chat_input("请输入您的维修问题..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. 调用你的 AI 逻辑 (这里需要替换成你真实的函数调用)
-    # 假设你有一个函数叫 get_ai_response(question)
+
+    def get_ai_response(messages):
+        """
+        调用通义千问大模型并返回生成器（用于流式输出）
+        """
+        try:
+            response = Generation.call(
+                model="qwen-plus",
+                messages=messages,
+                result_format='message',
+                stream=True,  # 开启流式输出
+                api_key=os.environ.get("DASHSCOPE_API_KEY")
+            )
+            return response
+        except Exception as e:
+            st.error(f"AI 调用失败: {str(e)}")
+            return None
+
+
+    # # 2. 调用你的 AI 逻辑
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()  # 创建一个占位符
+        message_placeholder = st.empty()
+        full_response = ""
 
-        # 模拟思考过程 (或者在这里调用你的 search + llm 代码)
-        # full_response = get_ai_response(prompt)
-        full_response = "正在检索知识库并生成回答..."  # 占位符
+        # 获取当前的完整对话历史（包含刚才 append 的用户消息）
+        current_messages = st.session_state.messages
 
-        # 如果你想做成打字机效果，可以用这个循环：
+        # 调用真实 AI 接口
+        ai_stream = get_ai_response(current_messages)
+
+        if ai_stream:
+            # 处理流式返回的数据
+            for chunk in ai_stream:
+                if chunk.status_code == 200:
+                    # 提取当前片段的文本内容
+                    content = chunk.output.choices[0].message.content
+                    full_response += content
+
+                    # 实时更新界面，模拟打字机效果
+                    message_placeholder.markdown(full_response + "▌")
+                else:
+                    st.error(f"请求出错: {chunk.message}")
+                    break
+
+        # 显示最终结果（去掉光标）
         message_placeholder.markdown(full_response)
 
-        # 3. 保存助手回复到历史记录
+    # # 3. 保存助手回复到历史记录
     st.session_state.messages.append({"role": "assistant", "content": full_response})

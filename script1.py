@@ -9,7 +9,7 @@ client = OpenAI(
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 
-# 模拟你的维修手册内容
+# 维修手册
 docs, metas = build_chunks_from_paths(["压缩机维修手册.pdf", "风机手册.docx"])
 
 # 用通义千问的 embedding 模型生成向量
